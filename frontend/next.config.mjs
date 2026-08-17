@@ -3,10 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
-  // Emits a self-contained server bundle so the runtime image ships without
-  // node_modules. Required by the Dockerfile's standalone copy step.
-  output: 'standalone',
-
   async headers() {
     return [
       {
