@@ -1,0 +1,42 @@
+# Integration-test profile.
+#
+# Production and docker-compose run MySQL 8 exclusively. Tests use H2 in MySQL
+# compatibility mode so the suite runs in CI without a database container; the
+# schema is created by Hibernate from the same entity mappings, and the Flyway
+# MySQL migration is verified separately against the real engine via
+# docker-compose.
+spring:
+  datasource:
+    url: jdbc:h2:mem:careflow;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+
+  flyway:
+    enabled: false
+
+careflow:
+  version: test
+  environment: test
+  commit: test-commit
+  security:
+    jwt:
+      secret: test-secret-key-for-integration-tests-only-not-production
+      expiration-minutes: 60
+  seed:
+    enabled: false
+  ai:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.careflow: INFO

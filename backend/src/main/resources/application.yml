@@ -1,0 +1,104 @@
+spring:
+  application:
+    name: careflow-backend
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?useSSL=${DB_USE_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: careflow-pool
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      connection-timeout: 30000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          time_zone: UTC
+          batch_size: 25
+        order_inserts: true
+        format_sql: false
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+      group:
+        readiness:
+          include: db
+  info:
+    env:
+      enabled: true
+  health:
+    db:
+      enabled: true
+
+careflow:
+  version: ${APP_VERSION:1.0.0}
+  environment: ${APP_ENV:local}
+  commit: ${GIT_COMMIT:unknown}
+  deployed-at: ${DEPLOYED_AT:}
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+      issuer: careflow
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  adherence:
+    low-threshold-percentage: ${ADHERENCE_LOW_THRESHOLD:80}
+  risk:
+    missed-dose-threshold: ${RISK_MISSED_DOSE_THRESHOLD:3}
+  ai:
+    enabled: ${GROQ_ENABLED:false}
+    api-key: ${GROQ_API_KEY:}
+    base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
+    model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+    timeout-seconds: ${GROQ_TIMEOUT_SECONDS:20}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+    tagsSorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: INFO
+    com.careflow: ${LOG_LEVEL_APP:INFO}
+    org.hibernate.SQL: WARN

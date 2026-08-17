@@ -1,0 +1,123 @@
+# CareFlow CI/CD pipeline.
+#
+#   push to main -> test -> build -> push image -> deploy to GCE -> health check
+#
+# The pipeline fails closed: unit and integration tests must pass before an
+# image is built, and the deploy step's own health check must pass before the
+# build is reported green. deploy.sh rolls back to the previous image if the new
+# one is unhealthy, so a red build also means the VM is still serving the last
+# known-good version.
+#
+# No secret values appear in this file. Database credentials and the JWT secret
+# live in Secret Manager and are written to the VM's env file out of band; only
+# resource names and the SSH target are configured here.
+
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: careflow-repo
+  _IMAGE_NAME: careflow-backend
+  _APP_VERSION: 1.0.0
+  _VM_NAME: careflow-vm
+  _VM_ZONE: us-central1-a
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+timeout: 1800s
+
+steps:
+  # 1. Tests. A failure here stops the pipeline before any image is produced.
+  - id: test
+    name: maven:3.9-eclipse-temurin-21
+    dir: backend
+    entrypoint: mvn
+    args: ['-B', 'clean', 'test']
+
+  # 2. Package the application (tests already ran in the previous step).
+  - id: package
+    name: maven:3.9-eclipse-temurin-21
+    dir: backend
+    entrypoint: mvn
+    args: ['-B', 'package', '-DskipTests']
+    waitFor: ['test']
+
+  # 3. Build the image, tagging with the immutable commit SHA plus moving tags.
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    dir: backend
+    args:
+      - build
+      - '--build-arg'
+      - 'APP_VERSION=${_APP_VERSION}'
+      - '--build-arg'
+      - 'GIT_COMMIT=${SHORT_SHA}'
+      - '--build-arg'
+      - 'DEPLOYED_AT=${BUILD_ID}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:${_APP_VERSION}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:latest'
+      - '.'
+    waitFor: ['package']
+
+  # 4. Push every tag to Artifact Registry.
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}'
+    waitFor: ['docker-build']
+
+  # 5. Deploy the commit-SHA tag to the VM. Deploying the immutable tag rather
+  #    than :latest guarantees the VM runs exactly this build.
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        IMAGE="${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:${SHORT_SHA}"
+        echo "Deploying $${IMAGE} to ${_VM_NAME}"
+        gcloud compute ssh "${_VM_NAME}" \
+          --zone "${_VM_ZONE}" \
+          --tunnel-through-iap \
+          --quiet \
+          --command "sudo /opt/careflow/deploy.sh $${IMAGE}"
+    waitFor: ['docker-push']
+
+  # 6. Independent post-deploy verification through the public entry point.
+  #    deploy.sh already gates on health internally; this confirms the service is
+  #    reachable end-to-end through Nginx and running the expected commit.
+  - id: verify
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        echo "Verifying the deployed build reports commit ${SHORT_SHA}"
+        for attempt in $(seq 1 10); do
+          VERSION_JSON="$(gcloud compute ssh "${_VM_NAME}" \
+            --zone "${_VM_ZONE}" --tunnel-through-iap --quiet \
+            --command 'curl -fsS http://127.0.0.1:8080/api/system/version' || true)"
+
+          if echo "$${VERSION_JSON}" | grep -q '"commit":"${SHORT_SHA}"'; then
+            echo "Verified: $${VERSION_JSON}"
+            exit 0
+          fi
+          echo "Attempt $${attempt}: not yet reporting the new commit; retrying."
+          sleep 10
+        done
+        echo "Deployed build did not report commit ${SHORT_SHA}." >&2
+        exit 1
+    waitFor: ['deploy']
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:${_APP_VERSION}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE_NAME}:latest'

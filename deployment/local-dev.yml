@@ -1,0 +1,43 @@
+# Local development profile for running CareFlow WITHOUT Docker or MySQL.
+#
+# Passed explicitly via --spring.config.additional-location, so it is never
+# packaged into the runtime image. Production and docker-compose use MySQL 8
+# exclusively and read every credential from the environment.
+#
+# The secret below is a throwaway for local use only and grants nothing.
+spring:
+  datasource:
+    url: jdbc:h2:mem:careflow;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+
+  flyway:
+    enabled: false
+
+careflow:
+  version: 1.0.0
+  environment: local
+  commit: local-dev
+  security:
+    jwt:
+      secret: local-development-only-secret-not-used-anywhere-else
+    cors:
+      allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+  seed:
+    enabled: true
+  ai:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.careflow: INFO
