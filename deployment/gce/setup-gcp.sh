@@ -9,8 +9,8 @@
 set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:?export PROJECT_ID before running}"
-REGION="${REGION:-us-central1}"
-ZONE="${ZONE:-us-central1-a}"
+REGION="${REGION:-asia-south2}"
+ZONE="${ZONE:-asia-south2-a}"
 REPOSITORY="${REPOSITORY:-careflow-repo}"
 VM_NAME="${VM_NAME:-careflow-vm}"
 MACHINE_TYPE="${MACHINE_TYPE:-e2-medium}"

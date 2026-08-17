@@ -9,9 +9,15 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       pool-name: careflow-pool
-      maximum-pool-size: ${DB_POOL_MAX:10}
+      # Small on purpose: the target GCE instance is an e2-micro (~1 GB RAM),
+      # and each MySQL connection costs the server memory. 5 is comfortably
+      # enough for this app's traffic; raise via DB_POOL_MAX if the instance
+      # is upsized later.
+      maximum-pool-size: ${DB_POOL_MAX:5}
       minimum-idle: ${DB_POOL_MIN:2}
       connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 1200000
 
   jpa:
     open-in-view: false

@@ -17,10 +17,13 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+00:00
-    ports:
-      # Exposed on the host for local tooling only; production keeps MySQL
-      # unpublished and reachable solely over the internal network.
-      - "${DB_HOST_PORT:-3306}:3306"
+    # No ports published: MySQL is reachable only from other containers on the
+    # "careflow" network, matching production/GCE where it is never exposed
+    # to the host or the internet. Uncomment the block below only for local
+    # debugging with a host tool (Workbench, mysql CLI); never enable this on
+    # a shared or production host.
+    # ports:
+    #   - "${DB_HOST_PORT:-3308}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

@@ -1,12 +1,16 @@
 # Environment and secrets — never commit real values.
 # Both bare and nested forms, since .env files live at the repo root and inside
-# the frontend package.
+# the frontend package. The .env.* wildcard covers every variant (.env.local,
+# .env.production, etc). Any *.example file is a placeholder template, never a
+# real secret, so every such file is explicitly re-allowed and must stay
+# tracked — this covers .env.example, backend/.env.local.example, and any
+# future *.env*.example files the same way.
 .env
 **/.env
-.env.local
-**/.env.local
-.env.*.local
-**/.env.*.local
+.env.*
+**/.env.*
+!*.example
+!**/*.example
 *.pem
 *.key
 service-account*.json

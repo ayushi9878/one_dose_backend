@@ -332,7 +332,7 @@ Provision a VM once:
 ```bash
 export PROJECT_ID=<your-project>
 ./deployment/gce/setup-gcp.sh                    # APIs, registry, VM, IAM, secrets
-gcloud compute ssh careflow-vm --zone us-central1-a --tunnel-through-iap
+gcloud compute ssh careflow-vm --zone asia-south2-a --tunnel-through-iap
 sudo bash provision-vm.sh careflow.example.com   # Docker, Nginx, UFW, systemd, TLS
 ```
 

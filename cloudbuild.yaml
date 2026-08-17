@@ -13,12 +13,12 @@
 # resource names and the SSH target are configured here.
 
 substitutions:
-  _REGION: us-central1
+  _REGION: asia-south2
   _REPOSITORY: careflow-repo
   _IMAGE_NAME: careflow-backend
   _APP_VERSION: 1.0.0
-  _VM_NAME: careflow-vm
-  _VM_ZONE: us-central1-a
+  _VM_NAME: onedose-vm
+  _VM_ZONE: asia-south2-b
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -87,7 +87,7 @@ steps:
           --zone "${_VM_ZONE}" \
           --tunnel-through-iap \
           --quiet \
-          --command "sudo /opt/careflow/deploy.sh $${IMAGE}"
+          --command "sudo /opt/onedose/one_dose_backend/deployment/deploy.sh $${IMAGE}"
     waitFor: ['docker-push']
 
   # 6. Independent post-deploy verification through the public entry point.
