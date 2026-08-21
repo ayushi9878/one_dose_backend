@@ -10,9 +10,9 @@ set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:?export PROJECT_ID before running}"
 REGION="${REGION:-asia-south2}"
-ZONE="${ZONE:-asia-south2-a}"
+ZONE="${ZONE:-asia-south2-b}"
 REPOSITORY="${REPOSITORY:-careflow-repo}"
-VM_NAME="${VM_NAME:-careflow-vm}"
+VM_NAME="${VM_NAME:-onedose-vm}"
 MACHINE_TYPE="${MACHINE_TYPE:-e2-medium}"
 
 gcloud config set project "${PROJECT_ID}"
@@ -119,8 +119,9 @@ Next:
   1. Provision the VM:
        gcloud compute ssh ${VM_NAME} --zone ${ZONE} --tunnel-through-iap
        sudo bash provision-vm.sh <your-domain>
-  2. Write /opt/careflow/config/careflow.env from Secret Manager, chmod 600.
-  3. Copy deploy.sh to /opt/careflow/deploy.sh and chmod +x.
+  2. Write /opt/onedose/one_dose_backend/deployment/.env from Secret Manager, chmod 600.
+  3. Ensure the repo is checked out at /opt/onedose/one_dose_backend and that
+     deployment/gce/deploy.sh is executable.
   4. Connect the Cloud Build trigger to GitHub:
        gcloud builds triggers create github \\
          --name=careflow-main \\

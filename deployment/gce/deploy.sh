@@ -13,13 +13,18 @@
 set -euo pipefail
 
 IMAGE_URI="${1:-}"
-APP_DIR="/opt/careflow"
-ENV_FILE="${APP_DIR}/config/careflow.env"
+APP_DIR="/opt/onedose/one_dose_backend"
+ENV_FILE="${APP_DIR}/.env"
 CONTAINER_NAME="careflow-backend"
-PREVIOUS_IMAGE_FILE="${APP_DIR}/config/previous-image"
+PREVIOUS_IMAGE_FILE="${APP_DIR}/deployment/previous-image"
 HEALTH_URL="http://127.0.0.1:8080/actuator/health"
 HEALTH_TIMEOUT_SECONDS=120
 HEALTH_INTERVAL_SECONDS=5
+# The backend resolves MySQL by container name, so the deployed container
+# must join the same user-defined bridge the compose stack created. On the
+# default bridge the "mysql" hostname does not resolve, so the application
+# cannot reach its database and every deploy fails its health check.
+DOCKER_NETWORK="${DOCKER_NETWORK:-deployment_careflow}"
 
 log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 fail() { log "ERROR: $*"; exit 1; }
@@ -54,6 +59,7 @@ start_container() {
         --name "${CONTAINER_NAME}" \
         --restart unless-stopped \
         --env-file "${ENV_FILE}" \
+        --network "${DOCKER_NETWORK}" \
         --publish 127.0.0.1:8080:8080 \
         --log-driver json-file \
         --log-opt max-size=20m \

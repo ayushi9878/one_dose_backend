@@ -87,7 +87,7 @@ steps:
           --zone "${_VM_ZONE}" \
           --tunnel-through-iap \
           --quiet \
-          --command "sudo /opt/onedose/one_dose_backend/deployment/deploy.sh $${IMAGE}"
+          --command "sudo /opt/onedose/one_dose_backend/deployment/gce/deploy.sh $${IMAGE}"
     waitFor: ['docker-push']
 
   # 6. Independent post-deploy verification through the public entry point.
