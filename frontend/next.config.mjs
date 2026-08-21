@@ -9,6 +9,7 @@ const nextConfig = {
   // hook then fails to open with ENOENT. Tracing from the frontend package
   // root keeps the pass anchored to a directory that exists in the build
   // container, so the manifests are always emitted.
+  // This is a comment.
   outputFileTracingRoot: import.meta.dirname,
 
   async headers() {
