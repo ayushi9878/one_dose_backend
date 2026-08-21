@@ -3,7 +3,7 @@
 export type UserRole = 'ADMIN' | 'CARE_MANAGER' | 'PATIENT';
 
 export type RiskLevel = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
-
+//this is a comment
 export type MedicationFrequency =
   | 'ONCE_DAILY'
   | 'TWICE_DAILY'
