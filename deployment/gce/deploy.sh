@@ -25,6 +25,10 @@ HEALTH_INTERVAL_SECONDS=5
 # default bridge the "mysql" hostname does not resolve, so the application
 # cannot reach its database and every deploy fails its health check.
 DOCKER_NETWORK="${DOCKER_NETWORK:-deployment_careflow}"
+# The MySQL container's name on that network, and the port it listens on
+# inside it — not the host-side mapping, which compose deliberately omits.
+DB_HOST="${DB_HOST:-mysql}"
+DB_PORT="${DB_PORT:-3306}"
 
 log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 fail() { log "ERROR: $*"; exit 1; }
@@ -55,10 +59,16 @@ start_container() {
     local image="$1"
     docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
     # Published on loopback only — the public entry point is Nginx on 443.
+    # DB_HOST and DB_PORT are set by docker-compose as service-level values
+    # rather than living in the env file, so --env-file alone leaves them
+    # unset and the JDBC URL collapses to an unreachable host. They are passed
+    # explicitly here, after the env file so a value in the file still wins.
     docker run -d \
         --name "${CONTAINER_NAME}" \
         --restart unless-stopped \
         --env-file "${ENV_FILE}" \
+        --env "DB_HOST=${DB_HOST}" \
+        --env "DB_PORT=${DB_PORT}" \
         --network "${DOCKER_NETWORK}" \
         --publish 127.0.0.1:8080:8080 \
         --log-driver json-file \
