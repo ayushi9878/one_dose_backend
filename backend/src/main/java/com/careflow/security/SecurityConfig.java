@@ -82,7 +82,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(properties.getSecurity().getCors().getAllowedOrigins());
+        // Patterns rather than exact origins: Vercel mints a new hostname for
+        // every deployment (project-<hash>-<scope>.vercel.app), so an exact
+        // list goes stale on each deploy. setAllowedOriginPatterns also keeps
+        // working alongside allowCredentials, which "*" would not.
+        configuration.setAllowedOriginPatterns(properties.getSecurity().getCors().getAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id"));
         configuration.setExposedHeaders(List.of("X-Request-Id"));
