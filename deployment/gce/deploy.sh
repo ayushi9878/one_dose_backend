@@ -18,7 +18,11 @@ ENV_FILE="${APP_DIR}/.env"
 CONTAINER_NAME="careflow-backend"
 PREVIOUS_IMAGE_FILE="${APP_DIR}/deployment/previous-image"
 HEALTH_URL="http://127.0.0.1:8080/actuator/health"
-HEALTH_TIMEOUT_SECONDS=120
+# Spring Boot needs roughly four and a half minutes to reach UP on the e2-micro
+# this runs on, so the old 120s budget failed every deploy while the app was
+# still starting normally. Six minutes leaves headroom without masking a
+# genuinely stuck boot.
+HEALTH_TIMEOUT_SECONDS=360
 HEALTH_INTERVAL_SECONDS=5
 # The backend resolves MySQL by container name, so the deployed container
 # must join the same user-defined bridge the compose stack created. On the
