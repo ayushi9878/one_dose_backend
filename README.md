@@ -332,7 +332,7 @@ Provision a VM once:
 ```bash
 export PROJECT_ID=<your-project>
 ./deployment/gce/setup-gcp.sh                    # APIs, registry, VM, IAM, secrets
-gcloud compute ssh careflow-vm --zone asia-south2-a --tunnel-through-iap
+gcloud compute ssh onedose-vm --zone asia-south2-b --tunnel-through-iap
 sudo bash provision-vm.sh careflow.example.com   # Docker, Nginx, UFW, systemd, TLS
 ```
 
@@ -376,11 +376,18 @@ Connect the trigger:
 
 ```bash
 gcloud builds triggers create github \
-  --name=careflow-main \
+  --name=careflow-main-deploy \
   --repo-owner=<owner> --repo-name=<repo> \
   --branch-pattern='^main$' \
   --build-config=cloudbuild.yaml
 ```
+
+Creating the trigger requires authorizing the Cloud Build GitHub App in the
+console first — that consent step cannot be done from the CLI, and without it
+the command above fails with `INVALID_ARGUMENT`. Check that the trigger ends up
+pointing at `cloudbuild.yaml` rather than autodetecting a build config, since a
+trigger created through the console defaults to autodetect and will silently
+ignore this pipeline.
 
 ---
 
